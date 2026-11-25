@@ -2,34 +2,52 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
-func main() {
+type Store struct {
+	data map[string]int
+	mu   sync.Mutex
+}
 
+func NewStore() *Store {
+	return &Store{data: make(map[string]int)}
+}
+
+func main() {
 	mapper := make(map[string]int)
+	store := NewStore()
 	mapper["KTA"] = 27
-	get("KTA", mapper)
+	store.Put("KTA", 27)
 	fmt.Println("Hello, World!")
 }
 
-func get(userKey string, mapper map[string]int) (int, bool) {
-	_, ok := mapper[userKey]
+func (s *Store) Get(key string) (int, bool) {
+	s.mu.Lock()
+	_, ok := s.data[key]
 	if ok {
-		return mapper[userKey], true
+		s.mu.Unlock()
+		return s.data[key], true
 	}
+	s.mu.Unlock()
 	return 0, false
 }
 
-func put(userKey string, userVal int, mapper map[string]int) {
-	mapper[userKey] = userVal
+func (s *Store) Put(key string, val int) {
+	s.mu.Lock()
+	s.data[key] = val
+	s.mu.Unlock()
 }
 
-func del(userKey string, mapper map[string]int) bool {
-	_, found := mapper[userKey]
+func (s *Store) Del(key string) bool {
+	s.mu.Lock()
+	_, found := s.data[key]
 	if found {
-		delete(mapper, userKey)
+		delete(s.data, key)
+		s.mu.Unlock()
 		return true
 	}
+	s.mu.Unlock()
 	return false
 
 }
